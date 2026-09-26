@@ -1,6 +1,6 @@
 # Set up your own creator research dashboard
 
-You need a computer, Node.js, FFmpeg, and three API keys: Apify, TypeSafe Jev, and either Fireworks or Groq. You do not need both speech providers. No Instagram password is requested.
+You need a computer, Node.js, FFmpeg, and three API keys: Apify, OpenRouter (for TypeSafe Jev), and either Fireworks or Groq. You do not need a separate TypeSafe account or key, or both speech providers. No Instagram password is requested.
 
 ## 1. Install the tools
 
@@ -64,7 +64,7 @@ This copies `.env.example` to `.env`. It never overwrites an existing `.env`. Op
 | Key | Where to get it | What it does |
 | --- | --- | --- |
 | Apify | [Apify Console](https://console.apify.com/), account settings / API integrations | Collects Reel URLs, thumbnails and public metrics |
-| Jev | [TypeSafe](https://typesafe.ai/), your account's API key settings; [API documentation](https://docs.typesafe.ai/api) | Labels transcripts and script passages |
+| OpenRouter (Jev) | [OpenRouter API keys](https://openrouter.ai/settings/keys); [Jev documentation](https://openrouter.ai/docs/guides/community/jev) | Labels transcripts and script passages with `typesafe/jev-1.13` |
 | Fireworks, one option | [Fireworks account](https://app.fireworks.ai/), API keys | Transcribes audio with Whisper V3 Turbo |
 | Groq, alternative | [Groq API keys](https://console.groq.com/keys) | Transcribes audio with Whisper Large V3 Turbo |
 
@@ -76,7 +76,7 @@ For **Fireworks**, fill these entries in `.env`:
 
 ```dotenv
 APIFY_TOKEN=your_apify_token
-TYPESAFE_API_KEY=your_typesafe_key
+OPENROUTER_API_KEY=your_openrouter_key
 TRANSCRIPTION_PROVIDER=fireworks
 FIREWORKS_API_KEY=your_fireworks_key
 PORT=5190
@@ -86,13 +86,15 @@ For **Groq**, use:
 
 ```dotenv
 APIFY_TOKEN=your_apify_token
-TYPESAFE_API_KEY=your_typesafe_key
+OPENROUTER_API_KEY=your_openrouter_key
 TRANSCRIPTION_PROVIDER=groq
 GROQ_API_KEY=your_groq_key
 PORT=5190
 ```
 
 Replace the example values with your own keys. Keep just one value per setting. Leave the unused speech provider key empty. You do not need to edit any JavaScript.
+
+For an existing installation, replace the old `TYPESAFE_API_KEY` entry with `OPENROUTER_API_KEY` and use an OpenRouter key, not a TypeSafe key. `npm run setup` preserves existing configuration files, so it does not migrate that entry. `TYPESAFE_API_KEY` and `JEV_API_KEY` are no longer used. Jev requests go to `https://openrouter.ai/api/v1/systemone` with model `typesafe/jev-1.13`; billing goes to your OpenRouter account. Completed saved analyses remain available.
 
 The default local pacing settings are `FIREWORKS_REQUESTS_PER_MINUTE=60` and `GROQ_REQUESTS_PER_MINUTE=20`. These are local ceilings, not a statement of your account quota. Lower them if your account has a lower limit. Audio-duration quotas can also apply.
 
@@ -107,7 +109,7 @@ npm start
 
 Doctor checks installed tools and key presence without printing keys or calling provider APIs. Open **http://127.0.0.1:5190** in your browser. Keep the terminal open while processing.
 
-Open **Connections** and use **Save & verify connections**. Only Apify, Jev, and the selected speech provider are needed. A missing unused speech key is fine. Verification confirms API access; your first audio request still needs to succeed.
+Open **Connections** and use **Save & verify connections**. Only Apify, OpenRouter (TypeSafe Jev), and the selected speech provider are needed. A missing unused speech key is fine. The OpenRouter check authenticates your key without paid inference; it does not guarantee sufficient credits or access to Jev. Your first audio and classification requests still need to succeed.
 
 To stop the server, press **Ctrl+C** in its terminal. After editing `.env`, stop and start it again.
 
@@ -151,6 +153,8 @@ If an Apify launch response is lost, the app blocks a duplicate launch. Find the
 | FFmpeg or ffprobe missing | Install FFmpeg and ensure both commands are on PATH. |
 | Missing key after editing `.env` | Confirm it is named `.env`, not `.env.txt`, in the same folder as `server.mjs`. Restart. |
 | HTTP 401 or 403 | Check the selected provider key, account permissions and billing. |
+| OpenRouter HTTP 402 / paused run | Add OpenRouter credits or resolve the account quota, then resume unfinished work. |
+| OpenRouter key verifies but Jev fails | Check OpenRouter credits and model/provider restrictions for `typesafe/jev-1.13`. Key verification does not call the model. |
 | HTTP 429 / paused run | Check provider quotas. Wait for reset or lower pacing; then resume. Short rate limits retry automatically. |
 | Groq upgrade unavailable | Configure Fireworks instead. Existing transcripts remain cached. |
 | No audio / too little speech | These Reels are excluded from spoken-script comparisons. They are not pending labels. |
@@ -162,7 +166,7 @@ If an Apify launch response is lost, the app blocks a duplicate launch. Find the
 
 ## Costs, privacy and sharing
 
-The app's estimated costs are separate for collection, speech and Jev. Account minimums, retries and rate changes can affect the actual bill. Provider billing is authoritative. [Groq speech documentation](https://console.groq.com/docs/speech-to-text), [Apify Actor pricing](https://apify.com/apify/instagram-reel-scraper/pricing), and [TypeSafe documentation](https://docs.typesafe.ai/) are the starting points for current terms. The Fireworks implementation uses its Whisper Turbo audio endpoint; confirm availability in your account.
+The app's costs are separate for collection, speech and Jev. Jev uses OpenRouter's reported `usage.cost` when available, otherwise an input-token estimate; missing cost and token usage stay unknown. Account minimums, retries and rate changes can affect the actual bill. Provider billing is authoritative. [Groq speech documentation](https://console.groq.com/docs/speech-to-text), [Apify Actor pricing](https://apify.com/apify/instagram-reel-scraper/pricing), and [Jev on OpenRouter](https://openrouter.ai/typesafe/jev-1.13/api) are the starting points for current terms. The Fireworks implementation uses its Whisper Turbo audio endpoint; confirm availability in your account.
 
 Do not publish `.env`, `data/`, screenshots of keys, or your exported archive by accident. These files are excluded from Git by default. [Read the data flow](PRIVACY.md). The server is intended for your own computer, not public hosting.
 
@@ -178,4 +182,4 @@ Choose 12, 20 or 40 seconds, press Play, then **Clean view** to hide the control
 
 The canvas is 1080 × 1000 and scales to your window. Crop your screen recording around it and place it over your portrait footage. It is intentionally taller than the full research dashboard so the text stays larger on a phone. Script excerpts can be visually truncated; use the main dashboard to read the full transcript.
 
-The recording cost counter sums stored Jev estimates for the revealed scripts, including reused results; it is not a new charge or a complete pipeline invoice. Missing costs display as unknown. The synthetic rehearsal has no real cost. All these layouts replay saved results and make no new paid analysis calls.
+The recording cost counter sums stored Jev costs for the revealed scripts, including reused results; it is not a new charge or a complete pipeline invoice. Missing costs display as unknown. The synthetic rehearsal has no real cost. All these layouts replay saved results and make no new paid analysis calls.

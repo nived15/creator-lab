@@ -14,7 +14,7 @@ test('Fireworks uploads extracted audio, falls back from broken audio, then cach
   url=String(url);
   if(url.includes('cdninstagram.com')){downloads.push(url);return new Response(url.includes('broken')?'invalid media':wav());}
   if(url.includes('audio-turbo.api.fireworks.ai')){uploads++;assert.equal(opts.body.get('model'),'whisper-v3-turbo');assert.equal(opts.body.get('response_format'),'verbose_json');assert.equal(opts.body.get('url'),null);assert.equal(opts.body.get('file').type,'audio/flac');assert.ok(opts.body.get('file').size>0);return Response.json({text:'Pick one task and finish it today.',segments:[{start:0,end:1,text:'Pick one task and finish it today.'}]});}
-  if(url.includes('typesafe.ai')){jev++;const req=JSON.parse(opts.body);return Response.json({model:req.model,answers:Object.fromEntries(Object.entries(req.questions).map(([k,q])=>[k,{type:q.type,choice:Object.keys(q.criteria)[0],confidence:.9,probabilities:{[Object.keys(q.criteria)[0]]:1}}])),usage:{input_tokens:1000,output_tokens:100}});}
+    if(url==='https://openrouter.ai/api/v1/systemone'){jev++;const req=JSON.parse(opts.body);assert.equal(req.model,'typesafe/jev-1.13');return Response.json({model:req.model,answers:Object.fromEntries(Object.entries(req.questions).map(([k,q])=>[k,{type:q.type,choice:Object.keys(q.criteria)[0],confidence:.9,probabilities:{[Object.keys(q.criteria)[0]]:1}}])),usage:{input_tokens:1000,output_tokens:100}});}
   throw new Error('Unexpected request');
  };
  try{

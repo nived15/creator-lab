@@ -15,7 +15,7 @@ const CSRF=randomBytes(32).toString('hex');
 let localEnv={};try{localEnv=parseEnv(await readFile(join(ROOT,'.env'),'utf8'));}catch{}
 const transcriptionProvider=localEnv.TRANSCRIPTION_PROVIDER||process.env.TRANSCRIPTION_PROVIDER||'fireworks';
 const sessionKeys={};const verified={};
-const keys=()=>({fireworks:sessionKeys.fireworks||localEnv.FIREWORKS_API_KEY||process.env.FIREWORKS_API_KEY,apify:sessionKeys.apify||localEnv.APIFY_TOKEN||process.env.APIFY_TOKEN||process.env.APIFY_API_TOKEN,groq:sessionKeys.groq||localEnv.GROQ_API_KEY||process.env.GROQ_API_KEY,jev:sessionKeys.jev||localEnv.TYPESAFE_API_KEY||process.env.TYPESAFE_API_KEY||process.env.JEV_API_KEY});
+const keys=()=>({fireworks:sessionKeys.fireworks||localEnv.FIREWORKS_API_KEY||process.env.FIREWORKS_API_KEY,apify:sessionKeys.apify||localEnv.APIFY_TOKEN||process.env.APIFY_TOKEN||process.env.APIFY_API_TOKEN,groq:sessionKeys.groq||localEnv.GROQ_API_KEY||process.env.GROQ_API_KEY,jev:sessionKeys.jev||localEnv.OPENROUTER_API_KEY||process.env.OPENROUTER_API_KEY});
 const pipeline=await new Pipeline(process.env.LAB_DATA_DIR||join(ROOT,'data'),keys,{transcriptionProvider,fireworksRpm:Number(localEnv.FIREWORKS_REQUESTS_PER_MINUTE||process.env.FIREWORKS_REQUESTS_PER_MINUTE||60),groqRpm:Number(localEnv.GROQ_REQUESTS_PER_MINUTE||process.env.GROQ_REQUESTS_PER_MINUTE||20)}).init();
 let mediaActive=0;const mediaWaiters=[],mediaPending=new Map();async function mediaTask(fn){if(mediaActive>=8)await new Promise(resolve=>mediaWaiters.push(resolve));else mediaActive++;try{return await fn();}finally{if(mediaWaiters.length)mediaWaiters.shift()();else mediaActive--;}}
 const clients=new Set();pipeline.listeners.add(id=>{for(const res of clients)res.write(`data: ${JSON.stringify({id})}\n\n`);});

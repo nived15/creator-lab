@@ -6,7 +6,7 @@
 
 Turn a creator's Instagram Reels into a searchable research library. Filter by topic and hook, compare engagement, read the scripts, and open the original posts behind each pattern.
 
-Built with **Apify → Fireworks or Groq → TypeSafe Jev**. Runs locally in your browser. Bring your own API keys and choose a public creator, including your own account.
+Built with **Apify → Fireworks or Groq → TypeSafe Jev via OpenRouter**. Runs locally in your browser. Bring your own API keys and choose a public creator, including your own account.
 
 ## Start here
 
@@ -26,7 +26,7 @@ Built with **Apify → Fireworks or Groq → TypeSafe Jev**. Runs locally in you
    npm run setup
    ```
 
-4. Open `.env` in your editor. Add `APIFY_TOKEN`, `TYPESAFE_API_KEY`, and **one** transcription key: `FIREWORKS_API_KEY` or `GROQ_API_KEY`. Set `TRANSCRIPTION_PROVIDER` to match.
+4. Open `.env` in your editor. Add `APIFY_TOKEN`, `OPENROUTER_API_KEY`, and **one** transcription key: `FIREWORKS_API_KEY` or `GROQ_API_KEY`. Set `TRANSCRIPTION_PROVIDER` to match. No separate TypeSafe key is needed.
 5. Check and launch:
 
    ```sh
@@ -55,13 +55,15 @@ Jev sees the speech before performance metrics are joined. Views and plays remai
 | Collect Reel metadata and media URLs | [Apify Instagram Reel Scraper](https://apify.com/apify/instagram-reel-scraper) | `APIFY_TOKEN` |
 | Transcribe, default option | [Fireworks](https://fireworks.ai/) | `TRANSCRIPTION_PROVIDER=fireworks`, `FIREWORKS_API_KEY` |
 | Transcribe, alternative | [Groq](https://console.groq.com/docs/speech-to-text) | `TRANSCRIPTION_PROVIDER=groq`, `GROQ_API_KEY` |
-| Classify scripts | [TypeSafe Jev](https://docs.typesafe.ai/api) | `TYPESAFE_API_KEY` |
+| Classify scripts | [TypeSafe Jev via OpenRouter](https://openrouter.ai/typesafe/jev-1.13/api) | `OPENROUTER_API_KEY` |
 
 Use either transcription provider. There is no automatic switch that could charge a different provider. Restart the server after changing `.env`.
 
+Classification calls OpenRouter's [System One API](https://openrouter.ai/docs/guides/community/typesafe-sdk) with `model: typesafe/jev-1.13`, preserving Jev's typed choices, probabilities, and confidence scores. It does not use a chat model or Jev Router. For an existing setup, replace `TYPESAFE_API_KEY` with `OPENROUTER_API_KEY` and supply an OpenRouter key; direct TypeSafe keys are no longer read.
+
 ## Costs and coverage
 
-You pay the providers directly. The Apify spending cap in the form covers **Apify only**, not Jev or transcription. Start small and check provider billing before increasing the batch. Displayed model costs are estimates using rates in the source, not a billing guarantee.
+Apify and speech charges go to their respective accounts; Jev is billed through OpenRouter. The Apify spending cap in the form covers **Apify only**, not Jev or transcription. Start small and check provider billing before increasing the batch. Jev costs use OpenRouter's reported `usage.cost` when available, otherwise an estimate from input tokens. Displayed costs are not a complete billing guarantee.
 
 Each run requests 1 to 1,000 Reels from one handle. Actual coverage depends on Instagram and Apify. The scraper skips pinned and trial Reels; this is not a guaranteed full-account archive. Private, deleted, expired, or inaccessible media may fail. Music-only and very short speech are excluded from script analysis.
 
@@ -69,7 +71,7 @@ Replay animates saved results. It does not run collection or inference again, an
 
 ## Privacy
 
-The server binds to `127.0.0.1`. Keys stay in your local `.env` or server memory and are used to authenticate requests to their providers. Apify receives the handle; your chosen speech provider receives audio; Jev receives transcript text. Original source media is fetched from supported CDN hosts. The dashboard also loads fonts from Google Fonts. [Full data flow](docs/PRIVACY.md).
+The server binds to `127.0.0.1`. Keys stay in your local `.env` or server memory and are used to authenticate requests to their providers. Apify receives the handle; your chosen speech provider receives audio; OpenRouter receives transcript text and classification questions and routes them to TypeSafe Jev. Original source media is fetched from supported CDN hosts. The dashboard also loads fonts from Google Fonts. [Full data flow](docs/PRIVACY.md).
 
 `.env`, generated data, caches, and downloaded media are excluded from Git. This repository includes no personal API keys or collected creator archive. Never put keys into a GitHub issue or share your `.env`.
 
@@ -80,7 +82,7 @@ npm run check
 npm test
 ```
 
-Tests use mocked provider responses and local FFmpeg fixtures; they do not make paid API calls. Provider key verification checks account access, not a successful end-to-end analysis. A small live pilot is the final setup check.
+Tests use mocked provider responses and local FFmpeg fixtures; they do not make paid API calls. Jev key verification authenticates against OpenRouter's `/api/v1/key`; it does not run inference or guarantee credits or model access. A small live pilot is the final setup check.
 
 - `server.mjs`: local HTTP server, API, credentials in memory.
 - `lib/providers.mjs`: provider calls and media extraction.
@@ -89,4 +91,4 @@ Tests use mocked provider responses and local FFmpeg fixtures; they do not make 
 - `public/`: research dashboard and recording views.
 - `data/`: generated automatically, local only.
 
-MIT licensed. This is an independent project, not an official Instagram, Apify, Fireworks, Groq, or TypeSafe product.
+MIT licensed. This is an independent project, not an official Instagram, Apify, Fireworks, Groq, OpenRouter, or TypeSafe product.
